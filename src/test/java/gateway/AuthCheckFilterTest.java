@@ -112,4 +112,30 @@ public class AuthCheckFilterTest {
 			}
 		}
 	}
+
+	@Test
+	public void test9() {
+		while (true) {
+			try {
+				RestTemplate restTemplate = new RestTemplate();
+				restTemplate.postForLocation("http://127.0.0.1:8090/bong", "test=8");
+				TimeUnit.MILLISECONDS.sleep(200);
+			} catch (Exception e) {
+
+			}
+		}
+	}
+
+	@Test
+	public void test10() {
+		while (true) {
+			try {
+				RestTemplate restTemplate = new RestTemplate();
+				restTemplate.postForLocation("http://127.0.0.1:8090/bong", "test=8");
+				TimeUnit.MILLISECONDS.sleep(200);
+			} catch (Exception e) {
+
+			}
+		}
+	}
 }
