@@ -36,7 +36,16 @@ public class AuthCheckFilter implements GatewayFilter {
 
 	public void setup() {
 		// ELASTIC
-		ConnectionProvider provider = ConnectionProvider.elastic("auth-check-pool", Duration.ofMillis(8000L));
+//		ConnectionProvider provider = ConnectionProvider.elastic("auth-check-pool", Duration.ofMillis(8000L));
+		ConnectionProvider provider = ConnectionProvider.builder("auth-check-pool")
+				.maxConnections(Integer.MAX_VALUE)
+				.pendingAcquireTimeout(Duration.ofMillis(0))
+				.pendingAcquireMaxCount(-1)
+				.maxIdleTime(Duration.ofMillis(8000L))
+				.maxLifeTime(Duration.ofMillis(8000L))
+				.metrics(true)
+				.build();
+
 		TcpClient tcpClient = TcpClient.create(provider)
 				.port(80)
 				.option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5 * 1000)
