@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpResponse;
+import org.springframework.util.StopWatch;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.server.ServerWebExchange;
@@ -33,18 +34,21 @@ public class AuthCheckFilter implements GatewayFilter {
 
 	private static final Logger logger = LoggerFactory.getLogger(AuthCheckFilter.class);
 	private WebClient.Builder webClientBuilder;
+	private StopWatch stopWatch;
 
 	public void setup() {
 		// ELASTIC
 //		ConnectionProvider provider = ConnectionProvider.elastic("auth-check-pool", Duration.ofMillis(8000L));
-		ConnectionProvider provider = ConnectionProvider.builder("auth-check-pool")
-				.maxConnections(Integer.MAX_VALUE)
-				.pendingAcquireTimeout(Duration.ofMillis(0))
-				.pendingAcquireMaxCount(-1)
-				.maxIdleTime(Duration.ofMillis(8000L))
-				.maxLifeTime(Duration.ofMillis(8000L))
-				.metrics(true)
-				.build();
+		ConnectionProvider provider = ConnectionProvider.newConnection();
+//		ConnectionProvider provider = ConnectionProvider.builder("auth-check-pool")
+//				.maxConnections(Integer.MAX_VALUE)
+//				.pendingAcquireTimeout(Duration.ofMillis(0))
+//				.pendingAcquireMaxCount(-1)
+//				.maxIdleTime(Duration.ofMillis(8000L))
+//				.maxLifeTime(null)
+//				.maxLifeTime(Duration.ofMillis(8000L))
+//				.metrics(true)
+//				.build();
 
 		TcpClient tcpClient = TcpClient.create(provider)
 				.port(80)
@@ -58,6 +62,7 @@ public class AuthCheckFilter implements GatewayFilter {
 		this.webClientBuilder = WebClient.builder()
 				.clientConnector(connector)
 				.baseUrl("http://localhost:8001");
+		stopWatch = new StopWatch("ybs-stopwatch");
 	}
 
 	@Override
@@ -71,6 +76,7 @@ public class AuthCheckFilter implements GatewayFilter {
 	}
 
 	private Mono<ResponseEntity<String>> makeAuthCheckApi(ServerWebExchange exchange, WebClient.Builder webClientBuilder) {
+		stopWatch.start();
 		return webClientBuilder
 				.build()
 				.post()
@@ -94,7 +100,8 @@ public class AuthCheckFilter implements GatewayFilter {
 						}))
 				.doOnSuccess( // 권한체크 api 서버와 네트워크 통신 성공
 						result -> {
-
+							stopWatch.stop();
+							logger.info("stopWatch : {}", stopWatch.getLastTaskInfo().getTimeSeconds());
 							if (result.getStatusCode() == HttpStatus.OK) {
 								result.getBody();
 							} else {
